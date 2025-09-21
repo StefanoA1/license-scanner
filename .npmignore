@@ -1,0 +1,50 @@
+# Development files
+.git/
+.github/
+.vscode/
+.mise.toml
+mise.toml
+
+# Go source code (users don't need this)
+cmd/
+internal/
+go.mod
+go.sum
+*.go
+
+# Test files
+*_test.go
+**/*_test.go
+
+# Development docs
+DEVELOPMENT.md
+CONTEXT.md
+CLAUDE.md
+example.yml
+
+# Build artifacts (except final bin/)
+artifacts/
+dist/
+
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
+.env.*
+
+# Cache directories
+.cache/
+.tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+*~

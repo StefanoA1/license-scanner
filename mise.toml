@@ -1,0 +1,8 @@
+[tools]
+go = "latest"
+
+[tasks]
+lint = "golangci-lint run"
+format = "gofmt -w ."
+test-go = "go test ./..."
+build-go = "go build -o bin/license-scanner ./cmd/scanner"

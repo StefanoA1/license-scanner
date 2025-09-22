@@ -59,6 +59,7 @@ jobs:
       - name: Run Go tests
         run: go test ./...
       - name: Build Go binary
+        shell: bash
         run: |
           mkdir -p bin
           if [ "$RUNNER_OS" == "Windows" ]; then

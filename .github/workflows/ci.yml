@@ -16,19 +16,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
+          cache: true
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/.npm
-          key: ${{ runner.os }}-go-npm-${{ hashFiles('**/go.sum', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-go-npm-
       - name: Install golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
@@ -59,19 +50,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
+          cache: true
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/.npm
-          key: ${{ runner.os }}-go-npm-${{ hashFiles('**/go.sum', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-go-npm-
       - name: Install pnpm
         run: npm install -g pnpm
       - name: Run Go tests

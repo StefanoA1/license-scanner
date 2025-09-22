@@ -70,35 +70,35 @@ jobs:
       matrix:
         include:
           - goos: linux
-            goarch: amd64
+            goarch: amd64  # cspell:ignore goarch
           - goos: linux
-            goarch: arm64
+            goarch: arm64  # cspell:ignore goarch
           - goos: darwin
-            goarch: amd64
+            goarch: amd64  # cspell:ignore goarch
           - goos: darwin
-            goarch: arm64
+            goarch: arm64  # cspell:ignore goarch
           - goos: windows
-            goarch: amd64
+            goarch: amd64  # cspell:ignore goarch
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
-      - name: Build binary for ${{ matrix.goos }}/${{ matrix.goarch }}
+      - name: Build binary for ${{ matrix.goos }}/${{ matrix.goarch }}  # cspell:ignore goarch
         env:
           GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
+          GOARCH: ${{ matrix.goarch }}  # cspell:ignore GOARCH goarch
         run: |
           mkdir -p bin
           EXT=""
           if [ "${{ matrix.goos }}" = "windows" ]; then
             EXT=".exe"
           fi
-          go build -o bin/license-scanner-${{ matrix.goos }}-${{ matrix.goarch }}${EXT} ./cmd/scanner
+          go build -o bin/license-scanner-${{ matrix.goos }}-${{ matrix.goarch }}${EXT} ./cmd/scanner  # cspell:ignore goarch
       - name: Upload binary artifact
         uses: actions/upload-artifact@v5
         with:
-          name: license-scanner-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: license-scanner-${{ matrix.goos }}-${{ matrix.goarch }}  # cspell:ignore goarch
           path: bin/license-scanner-*
 
   publish:
@@ -139,12 +139,12 @@ jobs:
             npm version major -m "Github CI: Bump version to %s"
             echo "https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
             git push origin HEAD:main --tags
-          elif [[ "$COMMIT_MSG" == *"release: minor"* ]]; then
+          elif [[ "$COMMIT_MSG" == *"release: minor"* ]]; then  # cspell:ignore elif
             echo "Minor bump"
             npm version minor -m "Github CI: Bump version to %s"
             echo "https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
             git push origin HEAD:main --tags
-          elif [[ "$COMMIT_MSG" == *"release: patch"* ]]; then
+          elif [[ "$COMMIT_MSG" == *"release: patch"* ]]; then  # cspell:ignore elif
             echo "Patch bump"
             npm version patch -m "Github CI: Bump version to %s"
             echo "https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
@@ -154,7 +154,7 @@ jobs:
             echo "Skipping release"
             exit 0
           fi
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc  # cspell:ignore npmjs
           npm publish
         env:
           GITHUB_ACTOR: ${{ github.actor }}

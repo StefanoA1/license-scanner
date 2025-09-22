@@ -8,13 +8,13 @@
   },
   "scripts": {
     "build": "pnpm run build:go",
-    "build:go": "mise run build-go",
+    "build:go": "go build -o bin/license-scanner ./cmd/scanner",
     "dev": "pnpm run test:e2e",
     "test": "pnpm run format && pnpm run lint && pnpm run test:go && pnpm run test:e2e",
-    "test:go": "mise run test-go",
+    "test:go": "go test ./...",
     "test:e2e": "pnpm add express lodash && pnpm run build:go && node lib/cli.js && pnpm remove express lodash && rm -rf node_modules pnpm-lock.yaml",
-    "lint": "mise run lint",
-    "format": "mise run format",
+    "lint": "golangci-lint run",
+    "format": "gofmt -w .",
     "prepublish": "npm run test"
   },
   "keywords": [

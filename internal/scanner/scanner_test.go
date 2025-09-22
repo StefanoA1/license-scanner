@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -25,15 +26,21 @@ func NewMockFileSystem() *MockFileSystem {
 }
 
 func (fs *MockFileSystem) AddFile(path, content string) {
-	fs.files[path] = content
+	// Normalize path to use filepath.Clean for cross-platform compatibility
+	normalizedPath := filepath.Clean(path)
+	fs.files[normalizedPath] = content
 }
 
 func (fs *MockFileSystem) AddDir(path string) {
-	fs.dirs[path] = true
+	// Normalize path to use filepath.Clean for cross-platform compatibility
+	normalizedPath := filepath.Clean(path)
+	fs.dirs[normalizedPath] = true
 }
 
 func (fs *MockFileSystem) Open(path string) (io.ReadCloser, error) {
-	content, exists := fs.files[path]
+	// Normalize path to handle cross-platform path separators
+	normalizedPath := filepath.Clean(path)
+	content, exists := fs.files[normalizedPath]
 	if !exists {
 		return nil, fmt.Errorf("file not found: %s", path)
 	}
@@ -41,17 +48,20 @@ func (fs *MockFileSystem) Open(path string) (io.ReadCloser, error) {
 }
 
 func (fs *MockFileSystem) Stat(path string) (os.FileInfo, error) {
-	if _, exists := fs.files[path]; exists {
-		return &mockFileInfo{name: path, isDir: false}, nil
+	// Normalize path to handle cross-platform path separators
+	normalizedPath := filepath.Clean(path)
+	if _, exists := fs.files[normalizedPath]; exists {
+		return &mockFileInfo{name: normalizedPath, isDir: false}, nil
 	}
-	if _, exists := fs.dirs[path]; exists {
-		return &mockFileInfo{name: path, isDir: true}, nil
+	if _, exists := fs.dirs[normalizedPath]; exists {
+		return &mockFileInfo{name: normalizedPath, isDir: true}, nil
 	}
 	return nil, os.ErrNotExist
 }
 
+// Join implements the FileSystem interface for cross-platform path joining
 func (fs *MockFileSystem) Join(elem ...string) string {
-	return strings.Join(elem, "/")
+	return filepath.Join(elem...)
 }
 
 type mockFileInfo struct {
@@ -87,17 +97,20 @@ func TestScanner_Scan_NPM(t *testing.T) {
 			}
 		}
 	}`
-	fs.AddFile("/test/package-lock.json", lockContent)
+	// Use cross-platform test root path
+	testRoot := filepath.Join("test")
+
+	fs.AddFile(filepath.Join(testRoot, "package-lock.json"), lockContent)
 
 	// Add package.json files for dependencies
-	fs.AddFile("/test/node_modules/lodash/package.json", `{"license": "MIT"}`)
-	fs.AddFile("/test/node_modules/express/package.json", `{"license": "MIT"}`)
+	fs.AddFile(filepath.Join(testRoot, "node_modules", "lodash", "package.json"), `{"license": "MIT"}`)
+	fs.AddFile(filepath.Join(testRoot, "node_modules", "express", "package.json"), `{"license": "MIT"}`)
 
 	// Create mock detector with file system
 	mockDetector := detector.NewWithFileSystem(fs)
 
 	// Create scanner with mock detector and file system
-	scanner := NewWithDependencies("/test", mockDetector, fs)
+	scanner := NewWithDependencies(testRoot, mockDetector, fs)
 
 	result, err := scanner.Scan()
 	if err != nil {
@@ -143,17 +156,20 @@ express@4.18.0:
   version "4.18.0"
   resolved "https://registry.yarnpkg.com/express/-/express-4.18.0.tgz"
 `
-	fs.AddFile("/test/yarn.lock", lockContent)
+	// Use cross-platform test root path
+	testRoot := filepath.Join("test")
+
+	fs.AddFile(filepath.Join(testRoot, "yarn.lock"), lockContent)
 
 	// Add LICENSE files for dependencies
-	fs.AddFile("/test/node_modules/lodash/LICENSE", "MIT License\n\nPermission is hereby granted, free of charge")
-	fs.AddFile("/test/node_modules/express/LICENSE", "MIT License\n\nPermission is hereby granted, free of charge")
+	fs.AddFile(filepath.Join(testRoot, "node_modules", "lodash", "LICENSE"), "MIT License\n\nPermission is hereby granted, free of charge")
+	fs.AddFile(filepath.Join(testRoot, "node_modules", "express", "LICENSE"), "MIT License\n\nPermission is hereby granted, free of charge")
 
 	// Create mock detector with file system
 	mockDetector := detector.NewWithFileSystem(fs)
 
 	// Create scanner with mock detector and file system
-	scanner := NewWithDependencies("/test", mockDetector, fs)
+	scanner := NewWithDependencies(testRoot, mockDetector, fs)
 
 	result, err := scanner.Scan()
 	if err != nil {
@@ -194,16 +210,19 @@ packages:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs+cA6SoVHLIkD1k6qPy5f8d9cw==}
     dev: false
 `
-	fs.AddFile("/test/pnpm-lock.yaml", lockContent)
+	// Use cross-platform test root path
+	testRoot := filepath.Join("test")
+
+	fs.AddFile(filepath.Join(testRoot, "pnpm-lock.yaml"), lockContent)
 
 	// Add package.json for dependency
-	fs.AddFile("/test/node_modules/lodash/package.json", `{"license": "MIT"}`)
+	fs.AddFile(filepath.Join(testRoot, "node_modules", "lodash", "package.json"), `{"license": "MIT"}`)
 
 	// Create mock detector with file system
 	mockDetector := detector.NewWithFileSystem(fs)
 
 	// Create scanner with mock detector and file system
-	scanner := NewWithDependencies("/test", mockDetector, fs)
+	scanner := NewWithDependencies(testRoot, mockDetector, fs)
 
 	result, err := scanner.Scan()
 	if err != nil {
@@ -263,13 +282,16 @@ func TestScanner_Scan_LicenseDetectionFallback(t *testing.T) {
 			}
 		}
 	}`
-	fs.AddFile("/test/package-lock.json", lockContent)
+	// Use cross-platform test root path
+	testRoot := filepath.Join("test")
+
+	fs.AddFile(filepath.Join(testRoot, "package-lock.json"), lockContent)
 
 	// Don't add any license information for the dependency
 	// This should trigger the fallback to "Unknown" license
 
 	mockDetector := detector.NewWithFileSystem(fs)
-	scanner := NewWithDependencies("/test", mockDetector, fs)
+	scanner := NewWithDependencies(testRoot, mockDetector, fs)
 
 	result, err := scanner.Scan()
 	if err != nil {
@@ -320,18 +342,21 @@ func TestScanner_Scan_MixedLicenseSources(t *testing.T) {
 			}
 		}
 	}`
-	fs.AddFile("/test/package-lock.json", lockContent)
+	// Use cross-platform test root path
+	testRoot := filepath.Join("test")
+
+	fs.AddFile(filepath.Join(testRoot, "package-lock.json"), lockContent)
 
 	// Add license via package.json for first dependency
-	fs.AddFile("/test/node_modules/package-json-license/package.json", `{"license": "Apache-2.0"}`)
+	fs.AddFile(filepath.Join(testRoot, "node_modules", "package-json-license", "package.json"), `{"license": "Apache-2.0"}`)
 
 	// Add license via LICENSE file for second dependency
-	fs.AddFile("/test/node_modules/license-file-license/LICENSE", "Apache License\nVersion 2.0, January 2004\n\nLicensed under the Apache License, Version 2.0")
+	fs.AddFile(filepath.Join(testRoot, "node_modules", "license-file-license", "LICENSE"), "Apache License\nVersion 2.0, January 2004\n\nLicensed under the Apache License, Version 2.0")
 
 	// No license information for third dependency
 
 	mockDetector := detector.NewWithFileSystem(fs)
-	scanner := NewWithDependencies("/test", mockDetector, fs)
+	scanner := NewWithDependencies(testRoot, mockDetector, fs)
 
 	result, err := scanner.Scan()
 	if err != nil {

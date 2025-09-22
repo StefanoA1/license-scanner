@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - '*'
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+      - name: Format check
+        run: |
+          gofmt -w .  # cspell:ignore gofmt
+          git diff --exit-code
+      - name: Lint
+        run: golangci-lint run
+
+  test:
+    needs: lint
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node-version: 22
+          - os: ubuntu-latest
+            node-version: 24
+          - os: macos-latest
+            node-version: 24
+          - os: windows-latest
+            node-version: 24
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Run Go tests
+        run: go test ./...
+      - name: Build Go binary
+        shell: bash
+        run: |
+          mkdir -p bin
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            go build -o bin/license-scanner.exe ./cmd/scanner
+          else
+            go build -o bin/license-scanner ./cmd/scanner
+          fi
+      - name: Run E2E tests
+        run: pnpm run test:e2e
+
+  build-cross-platform:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64  # cspell:ignore goarch
+          - goos: linux
+            goarch: arm64  # cspell:ignore goarch
+          - goos: darwin
+            goarch: amd64  # cspell:ignore goarch
+          - goos: darwin
+            goarch: arm64  # cspell:ignore goarch
+          - goos: windows
+            goarch: amd64  # cspell:ignore goarch
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+      - name: Build binary for ${{ matrix.goos }}/${{ matrix.goarch }}  # cspell:ignore goarch
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}  # cspell:ignore GOARCH goarch
+        run: |
+          mkdir -p bin
+          EXT=""
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            EXT=".exe"
+          fi
+          go build -o bin/license-scanner-${{ matrix.goos }}-${{ matrix.goarch }}${EXT} ./cmd/scanner  # cspell:ignore goarch
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-scanner-${{ matrix.goos }}-${{ matrix.goarch }}  # cspell:ignore goarch
+          path: bin/license-scanner-*
+
+  publish:
+    needs: build-cross-platform
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Organize binaries
+        run: |
+          mkdir -p bin
+          find artifacts -name "license-scanner-*" -type f | while read file; do
+            cp "$file" bin/
+          done
+          ls -la bin/
+      - name: Bump version, push tag and publish
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git config --global credential.helper store
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          if [[ "$COMMIT_MSG" == *"release: major"* ]]; then
+            echo "Major bump"
+            npm version major -m "Github CI: Bump version to %s"
+            echo "https://$GITHUB_ACTOR:${{ secrets.LICENSE_GITHUB_TOKEN }}@github.com" > ~/.git-credentials
+            git push origin HEAD:main --tags
+          elif [[ "$COMMIT_MSG" == *"release: minor"* ]]; then  # cspell:ignore elif
+            echo "Minor bump"
+            npm version minor -m "Github CI: Bump version to %s"
+            echo "https://$GITHUB_ACTOR:${{ secrets.LICENSE_GITHUB_TOKEN }}@github.com" > ~/.git-credentials
+            git push origin HEAD:main --tags
+          elif [[ "$COMMIT_MSG" == *"release: patch"* ]]; then  # cspell:ignore elif
+            echo "Patch bump"
+            npm version patch -m "Github CI: Bump version to %s"
+            echo "https://$GITHUB_ACTOR:${{ secrets.LICENSE_GITHUB_TOKEN }}@github.com" > ~/.git-credentials
+            git push origin HEAD:main --tags
+          fi
+          if [[ "$COMMIT_MSG" == *"release: skip"* ]] || [[ "$COMMIT_MSG" != *"Github CI: Bump version to"* ]]; then
+            echo "Skipping release"
+            exit 0
+          fi
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc  # cspell:ignore npmjs
+          npm publish
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}

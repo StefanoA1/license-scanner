@@ -1,7 +1,7 @@
 # License Scanner
 
 [![npm](https://img.shields.io/npm/v/@stefanoa1/license-scanner.svg)](https://www.npmjs.com/package/@stefanoa1/license-scanner)
-[![GitHub Actions](https://github.com/stefano/license-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/stefano/license-scanner/actions)
+[![GitHub Actions](https://github.com/YOUR_USERNAME/license-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/license-scanner/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A high-performance npm package that scans project dependencies to detect and report their licenses. Uses a Go binary for fast scanning wrapped in a Node.js package for easy integration.
@@ -25,8 +25,14 @@ It supports Node.js >= v16.
 ### CLI Usage
 With npx (or you can create a script on your package.json ` "scan-licenses": "@stefanoa1/license-scanner"`)
 ```bash
-# Basic scan (includes summary by default)
+# Basic scan - outputs clean JSON by default
 npx @stefanoa1/license-scanner
+
+# Save results to file
+npx @stefanoa1/license-scanner > output.json
+
+# Enable verbose logging for debugging
+npx @stefanoa1/license-scanner --verbose
 
 # Scan production dependencies only
 npx @stefanoa1/license-scanner --prod-only
@@ -40,6 +46,17 @@ npx @stefanoa1/license-scanner --no-summary
 # Scan specific directory
 npx @stefanoa1/license-scanner /path/to/project
 ```
+
+#### CLI Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--verbose` | `-v` | Enable verbose logging for debugging |
+| `--prod-only` | | Scan production dependencies only |
+| `--format <format>` | | Output format (json, html) [default: json] |
+| `--output <file>` | | Output file path |
+| `--no-summary` | | Skip license summary |
+| `--help` | `-h` | Show help message |
 
 ### Programmatic Usage
 
@@ -79,6 +96,7 @@ console.log(result.dependencies);
 - **📦 Multiple Package Managers**: Supports npm, yarn, and pnpm
 - **🎯 Zero Dependencies**: No runtime dependencies for fast installation
 - **📈 Comprehensive Reports**: Detailed license analysis with compatibility insights
+- **🛠️ Clean Output**: Outputs clean JSON by default, with optional verbose logging
 
 ## Supported Package Managers
 
@@ -98,7 +116,7 @@ console.log(result.dependencies);
 
 - MIT, Apache-2.0, GPL-2.0/3.0, BSD-2/3-Clause, ISC
 - Handles both string and object license fields
-- Recognizes common license variations (e.g., "apache2", "gplv3")
+- Recognizes common license variations (e.g., "apache2", "gplv3") <!-- cspell:ignore gplv -->
 
 ## Output Example
 

@@ -13,6 +13,7 @@ type Scanner struct {
 	rootPath        string
 	licenseDetector *detector.Detector
 	fs              parser.FileSystem
+	verbose         bool
 }
 
 type ScanResult struct {
@@ -32,6 +33,16 @@ func New(rootPath string) *Scanner {
 		rootPath:        rootPath,
 		licenseDetector: detector.New(),
 		fs:              &parser.RealFileSystem{},
+		verbose:         false,
+	}
+}
+
+func NewWithVerbose(rootPath string, verbose bool) *Scanner {
+	return &Scanner{
+		rootPath:        rootPath,
+		licenseDetector: detector.New(),
+		fs:              &parser.RealFileSystem{},
+		verbose:         verbose,
 	}
 }
 
@@ -58,7 +69,9 @@ func (s *Scanner) Scan() (*ScanResult, error) {
 		return nil, fmt.Errorf("no lock file found in %s", s.rootPath)
 	}
 
-	fmt.Fprintf(os.Stderr, "Found %s lock file: %s\n", packageManager, lockFilePath)
+	if s.verbose {
+		fmt.Fprintf(os.Stderr, "Found %s lock file: %s\n", packageManager, lockFilePath)
+	}
 
 	// Parse the lock file based on package manager
 	var lockParser parser.LockFileParser

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 
@@ -28,14 +29,18 @@ type Dependency struct {
 }
 
 func main() {
-	// Get project path from command line arguments
+	// Parse command line flags
+	verbose := flag.Bool("verbose", false, "Enable verbose logging")
+	flag.Parse()
+
+	// Get project path from remaining arguments
 	projectPath := "."
-	if len(os.Args) > 1 {
-		projectPath = os.Args[1]
+	if flag.NArg() > 0 {
+		projectPath = flag.Arg(0)
 	}
 
 	// Create and run scanner
-	s := scanner.New(projectPath)
+	s := scanner.NewWithVerbose(projectPath, *verbose)
 	scanResult, err := s.Scan()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error scanning project: %v\n", err)

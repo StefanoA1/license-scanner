@@ -1,7 +1,7 @@
 # License Scanner
 
 [![npm](https://img.shields.io/npm/v/@stefanoa1/license-scanner.svg)](https://www.npmjs.com/package/@stefanoa1/license-scanner)
-[![GitHub Actions](https://github.com/YOUR_USERNAME/license-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/license-scanner/actions)
+[![GitHub Actions](https://github.com/StefanoA1/license-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/StefanoA1/license-scanner/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A high-performance npm package that scans project dependencies to detect and report their licenses. Uses a Go binary for fast scanning wrapped in a Node.js package for easy integration.

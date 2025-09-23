@@ -44,16 +44,20 @@ type LockFileParser interface {
 }
 
 func DetectLockFile(fs FileSystem, rootPath string) (string, string, error) {
-	lockFiles := map[string]string{
-		"package-lock.json": "npm",
-		"yarn.lock":         "yarn",
-		"pnpm-lock.yaml":    "pnpm",
+	// Check lock files in priority order - npm takes precedence
+	lockFiles := []struct {
+		filename       string
+		packageManager string
+	}{
+		{"package-lock.json", "npm"},
+		{"yarn.lock", "yarn"},
+		{"pnpm-lock.yaml", "pnpm"},
 	}
 
-	for filename, packageManager := range lockFiles {
-		lockFilePath := fs.Join(rootPath, filename)
+	for _, lockFile := range lockFiles {
+		lockFilePath := fs.Join(rootPath, lockFile.filename)
 		if _, err := fs.Stat(lockFilePath); err == nil {
-			return lockFilePath, packageManager, nil
+			return lockFilePath, lockFile.packageManager, nil
 		}
 	}
 

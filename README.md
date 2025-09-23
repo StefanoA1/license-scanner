@@ -23,22 +23,22 @@ It supports Node.js >= v16.
 ## Usage
 
 ### CLI Usage
-
+With npx (or you can create a script on your package.json ` "scan-licenses": "@stefanoa1/license-scanner"`)
 ```bash
 # Basic scan (includes summary by default)
-license-scanner
+npx @stefanoa1/license-scanner
 
 # Scan production dependencies only
-license-scanner --prod-only
+npx @stefanoa1/license-scanner --prod-only
 
 # Generate HTML report
-license-scanner --format html --output report.html
+npx @stefanoa1/license-scanner --format html --output report.html
 
 # Skip license summary
-license-scanner --no-summary
+npx @stefanoa1/license-scanner --no-summary
 
 # Scan specific directory
-license-scanner /path/to/project
+npx @stefanoa1/license-scanner /path/to/project
 ```
 
 ### Programmatic Usage

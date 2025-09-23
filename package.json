@@ -9,13 +9,15 @@
   "scripts": {
     "build": "pnpm run build:go",
     "build:go": "go build -o bin/license-scanner ./cmd/scanner",
+    "build:all": "GOOS=darwin GOARCH=arm64 go build -o bin/license-scanner-darwin-arm64 ./cmd/scanner && GOOS=darwin GOARCH=amd64 go build -o bin/license-scanner-darwin-amd64 ./cmd/scanner && GOOS=linux GOARCH=amd64 go build -o bin/license-scanner-linux-amd64 ./cmd/scanner && GOOS=linux GOARCH=arm64 go build -o bin/license-scanner-linux-arm64 ./cmd/scanner && GOOS=windows GOARCH=amd64 go build -o bin/license-scanner-windows-amd64.exe ./cmd/scanner",
     "dev": "pnpm run test:e2e",
     "test": "pnpm run format && pnpm run lint && pnpm run test:go && pnpm run test:e2e",
     "test:go": "go test ./...",
     "test:e2e": "pnpm add express lodash && pnpm run build:go && node lib/cli.js && pnpm remove express lodash && rm -rf node_modules pnpm-lock.yaml",
     "lint": "golangci-lint run",
     "format": "gofmt -w .",
-    "prepublish": "npm run test"
+    "prepublish": "npm run build:all && npm run test",
+    "postinstall": "node scripts/postinstall.js"
   },
   "keywords": [
     "license",
@@ -32,7 +34,8 @@
   },
   "files": [
     "lib/",
-    "bin/"
+    "bin/",
+    "scripts/"
   ],
   "repository": {
     "type": "git",

@@ -1,6 +1,6 @@
 {
   "name": "@stefanoa1/license-scanner",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A high-performance npm package that scans project dependencies to detect and report their licenses",
   "main": "lib/index.js",
   "bin": {

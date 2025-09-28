@@ -5,8 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/stefano/license-scanner/internal/scanner"
+	"github.com/stefano/license-scanner/internal/templates"
 )
 
 type ScanResult struct {
@@ -18,6 +21,7 @@ type ScanResult struct {
 		Recommendations   []string `json:"recommendations"`
 	} `json:"summary"`
 	Dependencies []Dependency `json:"dependencies"`
+	Timestamp    string       `json:"timestamp,omitempty"`
 }
 
 type Dependency struct {
@@ -31,6 +35,9 @@ type Dependency struct {
 func main() {
 	// Parse command line flags
 	verbose := flag.Bool("verbose", false, "Enable verbose logging")
+	format := flag.String("format", "json", "Output format (json, html)")
+	_ = flag.Bool("prod-only", false, "Scan production dependencies only")
+	_ = flag.Bool("no-summary", false, "Skip license summary")
 	flag.Parse()
 
 	// Get project path from remaining arguments
@@ -86,11 +93,46 @@ func main() {
 	result.Summary.Conflicts = []string{}
 	result.Summary.Recommendations = []string{"License analysis complete"}
 
-	output, err := json.MarshalIndent(result, "", "  ")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error encoding JSON: %v\n", err)
-		os.Exit(1)
-	}
+	// Output based on format
+	switch strings.ToLower(*format) {
+	case "html":
+		result.Timestamp = time.Now().Format("January 2, 2006 at 15:04:05")
+		tmpl, err := templates.GetReportTemplate()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating HTML template: %v\n", err)
+			os.Exit(1)
+		}
 
-	fmt.Print(string(output))
+		// Create template data with embedded assets
+		templateData := templates.GetTemplateData()
+		templateData.Summary = result.Summary
+		templateData.Dependencies = make([]templates.Dependency, len(result.Dependencies))
+		templateData.Timestamp = result.Timestamp
+
+		// Convert dependencies
+		for i, dep := range result.Dependencies {
+			templateData.Dependencies[i] = templates.Dependency{
+				Name:       dep.Name,
+				Version:    dep.Version,
+				License:    dep.License,
+				Confidence: dep.Confidence,
+				Source:     dep.Source,
+			}
+		}
+
+		err = tmpl.Execute(os.Stdout, templateData)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error executing HTML template: %v\n", err)
+			os.Exit(1)
+		}
+	case "json":
+		fallthrough
+	default:
+		output, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error encoding JSON: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Print(string(output))
+	}
 }

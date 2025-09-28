@@ -29,7 +29,7 @@ With npx (or you can create a script on your package.json ` "scan-licenses": "@s
 npx @stefanoa1/license-scanner
 
 # Save results to file
-npx @stefanoa1/license-scanner > output.json
+npx @stefanoa1/license-scanner --output report.json
 
 # Enable verbose logging for debugging
 npx @stefanoa1/license-scanner --verbose
@@ -103,6 +103,8 @@ console.log(result.dependencies);
 - **npm** (package-lock.json)
 - **yarn** (yarn.lock)
 - **pnpm** (pnpm-lock.yaml)
+
+(bun support coming soon)
 
 ## Confidence Scoring System
 

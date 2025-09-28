@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/stefano/license-scanner/internal/detector"
 	"github.com/stefano/license-scanner/internal/parser"
@@ -96,7 +97,7 @@ func (s *Scanner) Scan() (*ScanResult, error) {
 
 	var enrichedDeps []EnrichedDependency
 	for _, dep := range dependencies {
-		packagePath := filepath.Join(nodeModulesPath, dep.Name)
+		packagePath := s.resolvePackagePath(nodeModulesPath, packageManager, dep)
 		licenseInfo, err := s.licenseDetector.DetectLicense(packagePath)
 		if err != nil {
 			// If detection fails, use default values
@@ -119,4 +120,71 @@ func (s *Scanner) Scan() (*ScanResult, error) {
 	return &ScanResult{
 		Dependencies: enrichedDeps,
 	}, nil
+}
+
+// resolvePackagePath resolves the actual file system path for a package based on the package manager
+func (s *Scanner) resolvePackagePath(nodeModulesPath, packageManager string, dep parser.Dependency) string {
+	switch packageManager {
+	case "pnpm":
+		// For pnpm, try multiple possible paths since the structure can vary
+		// Pattern: node_modules/.pnpm/<package>@<version>/node_modules/<package>
+		pnpmStorePath := filepath.Join(nodeModulesPath, ".pnpm")
+
+		// For scoped packages, pnpm may encode the @ symbol
+		encodedName := strings.ReplaceAll(dep.Name, "@", "%40")
+
+		// Try with exact version match (both encoded and non-encoded names)
+		candidates := []string{
+			dep.Name + "@" + dep.Version,
+			encodedName + "@" + dep.Version,
+		}
+
+		for _, candidate := range candidates {
+			pnpmPackagePath := filepath.Join(pnpmStorePath, candidate, "node_modules", dep.Name)
+			if s.pathExists(pnpmPackagePath) {
+				return pnpmPackagePath
+			}
+		}
+
+		// Try to find any version of the package in the .pnpm store
+		// This handles cases where the version might have additional qualifiers
+		if entries, err := os.ReadDir(pnpmStorePath); err == nil {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					entryName := entry.Name()
+					// Check for both regular and encoded package names
+					if strings.HasPrefix(entryName, dep.Name+"@") ||
+						strings.HasPrefix(entryName, encodedName+"@") {
+						candidatePath := filepath.Join(pnpmStorePath, entryName, "node_modules", dep.Name)
+						if s.pathExists(candidatePath) {
+							return candidatePath
+						}
+					}
+				}
+			}
+		}
+
+		// Fallback to standard node_modules path (for hoisted packages)
+		fallbackPath := filepath.Join(nodeModulesPath, dep.Name)
+		if s.pathExists(fallbackPath) {
+			return fallbackPath
+		}
+
+		// Return the expected pnpm path even if it doesn't exist (for error handling)
+		return filepath.Join(pnpmStorePath, dep.Name+"@"+dep.Version, "node_modules", dep.Name)
+
+	case "npm", "yarn":
+		// Standard node_modules structure
+		return filepath.Join(nodeModulesPath, dep.Name)
+
+	default:
+		// Default to standard structure
+		return filepath.Join(nodeModulesPath, dep.Name)
+	}
+}
+
+// pathExists checks if a path exists on the file system
+func (s *Scanner) pathExists(path string) bool {
+	_, err := s.fs.Stat(path)
+	return err == nil
 }

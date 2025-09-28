@@ -215,7 +215,10 @@ packages:
 
 	fs.AddFile(filepath.Join(testRoot, "pnpm-lock.yaml"), lockContent)
 
-	// Add package.json for dependency
+	// Add package.json for dependency in pnpm structure
+	fs.AddFile(filepath.Join(testRoot, "node_modules", ".pnpm", "lodash@4.17.21", "node_modules", "lodash", "package.json"), `{"license": "MIT"}`)
+
+	// Also add fallback in standard location for hoisted packages
 	fs.AddFile(filepath.Join(testRoot, "node_modules", "lodash", "package.json"), `{"license": "MIT"}`)
 
 	// Create mock detector with file system

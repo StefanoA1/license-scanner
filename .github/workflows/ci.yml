@@ -36,10 +36,46 @@ jobs:
     strategy:
       matrix:
         include:
+          # Always run Ubuntu tests (free)
           - os: ubuntu-latest
             node-version: 22
           - os: ubuntu-latest
             node-version: 24
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - name: Run Go tests
+        run: go test ./...
+      - name: Build Go binary
+        shell: bash
+        run: |
+          mkdir -p bin
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            go build -o bin/license-scanner.exe ./cmd/scanner
+          else
+            go build -o bin/license-scanner ./cmd/scanner
+          fi
+      - name: Run E2E tests
+        run: pnpm run test:e2e
+
+  test-expensive-platforms:
+    needs: lint
+    # Only run expensive platform tests on PRs to save costs
+    if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        include:
           - os: macos-latest
             node-version: 24
           - os: windows-latest
@@ -54,8 +90,10 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
       - name: Run Go tests
         run: go test ./...
       - name: Build Go binary
@@ -122,8 +160,10 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
       - name: Download all binary artifacts
         uses: actions/download-artifact@v4
         with:

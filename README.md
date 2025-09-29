@@ -22,23 +22,41 @@ It supports Node.js >= v16.
 
 ## Usage
 
-### CLI Usage
-With npx (or you can create a script on your package.json ` "scan-licenses": "@stefanoa1/license-scanner"`)
+### Package.json Usage
+
+You can add this to your scripts as (the scope on the package.json file is not needed once installed):
+
+```json
+{
+  "scripts": {
+    "scan-licenses": "license-scanner --format html --output report.html",
+  }
+}
+```
+
+Then, run:
 ```bash
-# Basic scan - outputs clean JSON by default
+  npm run scan-licenses
+```
+
+### CLI Usage
+
+With npx (scope @stefanoa1 is needed on npx):
+```console
+# Basic scan - outputs clean JSON to terminal by default
 npx @stefanoa1/license-scanner
 
 # Save results to file
 npx @stefanoa1/license-scanner --output report.json
+
+# Generate HTML report
+npx @stefanoa1/license-scanner --format html --output report.html
 
 # Enable verbose logging for debugging
 npx @stefanoa1/license-scanner --verbose
 
 # Scan production dependencies only
 npx @stefanoa1/license-scanner --prod-only
-
-# Generate HTML report
-npx @stefanoa1/license-scanner --format html --output report.html
 
 # Skip license summary
 npx @stefanoa1/license-scanner --no-summary

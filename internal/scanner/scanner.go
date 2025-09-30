@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/stefano/license-scanner/internal/constants"
 	"github.com/stefano/license-scanner/internal/detector"
 	"github.com/stefano/license-scanner/internal/parser"
 )
@@ -93,7 +94,7 @@ func (s *Scanner) Scan() (*ScanResult, error) {
 	}
 
 	// Enrich dependencies with license information
-	nodeModulesPath := filepath.Join(s.rootPath, "node_modules")
+	nodeModulesPath := filepath.Join(s.rootPath, constants.NodeModulesDir)
 
 	var enrichedDeps []EnrichedDependency
 	for _, dep := range dependencies {
@@ -102,9 +103,9 @@ func (s *Scanner) Scan() (*ScanResult, error) {
 		if err != nil {
 			// If detection fails, use default values
 			licenseInfo = &detector.LicenseInfo{
-				License:    "Unknown",
+				License:    constants.UnknownLicense,
 				Confidence: 0.0,
-				Source:     "detection failed",
+				Source:     constants.DetectionFailedSource,
 			}
 		}
 
@@ -125,10 +126,10 @@ func (s *Scanner) Scan() (*ScanResult, error) {
 // resolvePackagePath resolves the actual file system path for a package based on the package manager
 func (s *Scanner) resolvePackagePath(nodeModulesPath, packageManager string, dep parser.Dependency) string {
 	switch packageManager {
-	case "pnpm":
+	case constants.PackageManagerPnpm:
 		// For pnpm, try multiple possible paths since the structure can vary
 		// Pattern: node_modules/.pnpm/<package>@<version>/node_modules/<package>
-		pnpmStorePath := filepath.Join(nodeModulesPath, ".pnpm")
+		pnpmStorePath := filepath.Join(nodeModulesPath, constants.PnpmStoreDir)
 
 		// For scoped packages, pnpm may encode the @ symbol
 		encodedName := strings.ReplaceAll(dep.Name, "@", "%40")
@@ -140,7 +141,7 @@ func (s *Scanner) resolvePackagePath(nodeModulesPath, packageManager string, dep
 		}
 
 		for _, candidate := range candidates {
-			pnpmPackagePath := filepath.Join(pnpmStorePath, candidate, "node_modules", dep.Name)
+			pnpmPackagePath := filepath.Join(pnpmStorePath, candidate, constants.NodeModulesDir, dep.Name)
 			if s.pathExists(pnpmPackagePath) {
 				return pnpmPackagePath
 			}
@@ -155,7 +156,7 @@ func (s *Scanner) resolvePackagePath(nodeModulesPath, packageManager string, dep
 					// Check for both regular and encoded package names
 					if strings.HasPrefix(entryName, dep.Name+"@") ||
 						strings.HasPrefix(entryName, encodedName+"@") {
-						candidatePath := filepath.Join(pnpmStorePath, entryName, "node_modules", dep.Name)
+						candidatePath := filepath.Join(pnpmStorePath, entryName, constants.NodeModulesDir, dep.Name)
 						if s.pathExists(candidatePath) {
 							return candidatePath
 						}
@@ -171,9 +172,9 @@ func (s *Scanner) resolvePackagePath(nodeModulesPath, packageManager string, dep
 		}
 
 		// Return the expected pnpm path even if it doesn't exist (for error handling)
-		return filepath.Join(pnpmStorePath, dep.Name+"@"+dep.Version, "node_modules", dep.Name)
+		return filepath.Join(pnpmStorePath, dep.Name+"@"+dep.Version, constants.NodeModulesDir, dep.Name)
 
-	case "npm", "yarn":
+	case constants.PackageManagerNPM, constants.PackageManagerYarn:
 		// Standard node_modules structure
 		return filepath.Join(nodeModulesPath, dep.Name)
 

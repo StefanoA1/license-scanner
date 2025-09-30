@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stefano/license-scanner/internal/analyzer"
+	"github.com/stefano/license-scanner/internal/constants"
 	"github.com/stefano/license-scanner/internal/scanner"
 	"github.com/stefano/license-scanner/internal/templates"
 )
@@ -56,12 +58,12 @@ func main() {
 
 	// Convert scanner result to CLI output format
 	dependencies := make([]Dependency, len(scanResult.Dependencies))
-	uniqueLicenses := make(map[string]bool)
+	analyzerDeps := make([]analyzer.Dependency, len(scanResult.Dependencies))
 
 	for i, dep := range scanResult.Dependencies {
 		license := dep.License
 		if license == "" {
-			license = "Unknown"
+			license = constants.UnknownLicense
 		}
 
 		dependencies[i] = Dependency{
@@ -72,15 +74,24 @@ func main() {
 			Source:     dep.Source,
 		}
 
-		if license != "Unknown" {
-			uniqueLicenses[license] = true
+		analyzerDeps[i] = analyzer.Dependency{
+			Name:       dep.Name,
+			Version:    dep.Version,
+			License:    license,
+			Confidence: dep.Confidence,
 		}
 	}
 
-	// Build unique licenses list
+	// Perform license analysis
+	licenseAnalyzer := analyzer.New()
+	analysis := licenseAnalyzer.Analyze(analyzerDeps)
+
+	// Build unique licenses list from analysis
 	var uniqueLicensesList []string
-	for license := range uniqueLicenses {
-		uniqueLicensesList = append(uniqueLicensesList, license)
+	for license := range analysis.LicenseCounts {
+		if license != constants.UnknownLicense {
+			uniqueLicensesList = append(uniqueLicensesList, license)
+		}
 	}
 
 	result := ScanResult{
@@ -89,9 +100,9 @@ func main() {
 
 	result.Summary.TotalDependencies = len(dependencies)
 	result.Summary.UniqueLicenses = uniqueLicensesList
-	result.Summary.RiskLevel = "low"
-	result.Summary.Conflicts = []string{}
-	result.Summary.Recommendations = []string{"License analysis complete"}
+	result.Summary.RiskLevel = analysis.RiskLevel
+	result.Summary.Conflicts = analysis.Conflicts
+	result.Summary.Recommendations = analysis.Recommendations
 
 	// Output based on format
 	switch strings.ToLower(*format) {

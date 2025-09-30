@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/stefano/license-scanner/internal/constants"
 	"gopkg.in/yaml.v3"
 )
 
@@ -44,14 +45,15 @@ type LockFileParser interface {
 }
 
 func DetectLockFile(fs FileSystem, rootPath string) (string, string, error) {
-	// Check lock files in priority order - npm takes precedence
+	// Check lock files in priority order
+	// Priority: npm > yarn > pnpm (npm takes precedence as most common)
 	lockFiles := []struct {
 		filename       string
 		packageManager string
 	}{
-		{"package-lock.json", "npm"},
-		{"yarn.lock", "yarn"},
-		{"pnpm-lock.yaml", "pnpm"},
+		{constants.PackageLockJSON, constants.PackageManagerNPM},
+		{constants.YarnLock, constants.PackageManagerYarn},
+		{constants.PnpmLockYAML, constants.PackageManagerPnpm},
 	}
 
 	for _, lockFile := range lockFiles {
@@ -150,11 +152,12 @@ type NPMDependency struct {
 
 func extractPackageName(packagePath string) string {
 	// Remove "node_modules/" prefix and get the package name
-	if !strings.HasPrefix(packagePath, "node_modules/") {
+	prefix := constants.NodeModulesDir + "/"
+	if !strings.HasPrefix(packagePath, prefix) {
 		return ""
 	}
 
-	name := packagePath[len("node_modules/"):]
+	name := packagePath[len(prefix):]
 
 	// Handle scoped packages (@scope/package)
 	if len(name) > 0 && name[0] == '@' {

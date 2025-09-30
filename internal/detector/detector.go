@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/stefano/license-scanner/internal/constants"
 )
 
 type LicenseInfo struct {
@@ -64,14 +66,14 @@ func (d *Detector) DetectLicense(packagePath string) (*LicenseInfo, error) {
 
 	// Default to unknown
 	return &LicenseInfo{
-		License:    "Unknown",
+		License:    constants.UnknownLicense,
 		Confidence: 0.0,
-		Source:     "not found",
+		Source:     constants.NotFoundSource,
 	}, nil
 }
 
 func (d *Detector) detectFromPackageJSON(packagePath string) *LicenseInfo {
-	packageJSONPath := d.fs.Join(packagePath, "package.json")
+	packageJSONPath := d.fs.Join(packagePath, constants.PackageJSONFile)
 
 	file, err := d.fs.Open(packageJSONPath)
 	if err != nil {
@@ -99,7 +101,7 @@ func (d *Detector) detectFromPackageJSON(packagePath string) *LicenseInfo {
 		return &LicenseInfo{
 			License:    license,
 			Confidence: 1.0,
-			Source:     "package.json",
+			Source:     constants.PackageJSONSource,
 		}
 	}
 
@@ -107,16 +109,14 @@ func (d *Detector) detectFromPackageJSON(packagePath string) *LicenseInfo {
 }
 
 func (d *Detector) detectFromLicenseFile(packagePath string) *LicenseInfo {
-	licenseFiles := []string{"LICENSE", "LICENSE.txt", "LICENSE.md", "LICENCE", "LICENCE.txt", "LICENCE.md"}
-
-	for _, filename := range licenseFiles {
+	for _, filename := range constants.LicenseFileVariants {
 		licensePath := d.fs.Join(packagePath, filename)
 		if info, err := d.fs.Stat(licensePath); err == nil && !info.IsDir() {
 			license, confidence := d.analyzeLicenseFile(licensePath)
 			return &LicenseInfo{
 				License:    license,
 				Confidence: confidence,
-				Source:     "LICENSE file",
+				Source:     constants.LicenseFileSource,
 			}
 		}
 	}
@@ -127,7 +127,7 @@ func (d *Detector) detectFromLicenseFile(packagePath string) *LicenseInfo {
 func (d *Detector) analyzeLicenseFile(licensePath string) (string, float64) {
 	file, err := d.fs.Open(licensePath)
 	if err != nil {
-		return "Unknown", 0.2
+		return constants.UnknownLicense, 0.2
 	}
 	defer func() {
 		_ = file.Close() // Ignore close error as we already read the file
@@ -135,7 +135,7 @@ func (d *Detector) analyzeLicenseFile(licensePath string) (string, float64) {
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		return "Unknown", 0.2
+		return constants.UnknownLicense, 0.2
 	}
 
 	content := string(data)
@@ -183,7 +183,7 @@ func (d *Detector) analyzeLicenseFile(licensePath string) (string, float64) {
 		}
 	}
 
-	return "Unknown", 0.2
+	return constants.UnknownLicense, 0.2
 }
 
 func extractLicenseFromField(licenseField interface{}) string {

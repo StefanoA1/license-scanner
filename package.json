@@ -39,10 +39,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stefano/license-scanner.git"
+    "url": "git+https://github.com/StefanoA1/license-scanner.git"
   },
   "bugs": {
-    "url": "https://github.com/stefano/license-scanner/issues"
+    "url": "https://github.com/StefanoA1/license-scanner/issues"
   },
-  "homepage": "https://github.com/stefano/license-scanner#readme"
+  "homepage": "https://github.com/StefanoA1/license-scanner#readme"
 }

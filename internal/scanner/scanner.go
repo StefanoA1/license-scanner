@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/stefano/license-scanner/internal/constants"
-	"github.com/stefano/license-scanner/internal/detector"
-	"github.com/stefano/license-scanner/internal/parser"
+	"github.com/StefanoA1/license-scanner/internal/constants"
+	"github.com/StefanoA1/license-scanner/internal/detector"
+	"github.com/StefanoA1/license-scanner/internal/parser"
 )
 
 type Scanner struct {

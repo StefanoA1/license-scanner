@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stefano/license-scanner/internal/analyzer"
-	"github.com/stefano/license-scanner/internal/constants"
-	"github.com/stefano/license-scanner/internal/scanner"
-	"github.com/stefano/license-scanner/internal/templates"
+	"github.com/StefanoA1/license-scanner/internal/analyzer"
+	"github.com/StefanoA1/license-scanner/internal/constants"
+	"github.com/StefanoA1/license-scanner/internal/scanner"
+	"github.com/StefanoA1/license-scanner/internal/templates"
 )
 
 type ScanResult struct {

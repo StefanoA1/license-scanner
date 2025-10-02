@@ -1,4 +1,4 @@
-module github.com/stefano/license-scanner
+module github.com/StefanoA1/license-scanner
 
 go 1.24
 

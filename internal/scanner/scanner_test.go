@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stefano/license-scanner/internal/detector"
+	"github.com/StefanoA1/license-scanner/internal/detector"
 )
 
 // MockFileSystem implements detector.FileSystem for testing
